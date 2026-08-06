@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { scanLocalHeaders } from '@/utils/zipScan';
+import { scanLocalHeaders, isPkSignature } from '@/utils/zipScan';
 import { buildStoredZip, centralDirStart } from './_zipBuilder';
 
 const dec = new TextDecoder();
@@ -64,5 +64,37 @@ describe('scanLocalHeaders', () => {
 
   it('returns nothing for input too small to hold a header', () => {
     expect(scanLocalHeaders(new Uint8Array([0x50, 0x4b, 0x03]))).toEqual([]);
+  });
+});
+
+describe('isPkSignature', () => {
+  it('recognizes a local file header signature', () => {
+    expect(isPkSignature(new Uint8Array([0x50, 0x4b, 0x03, 0x04]), 0)).toBe(true);
+  });
+
+  it('recognizes a central directory header signature', () => {
+    expect(isPkSignature(new Uint8Array([0x50, 0x4b, 0x01, 0x02]), 0)).toBe(true);
+  });
+
+  it('recognizes an end-of-central-directory signature', () => {
+    expect(isPkSignature(new Uint8Array([0x50, 0x4b, 0x05, 0x06]), 0)).toBe(true);
+  });
+
+  it('recognizes a data descriptor signature', () => {
+    expect(isPkSignature(new Uint8Array([0x50, 0x4b, 0x07, 0x08]), 0)).toBe(true);
+  });
+
+  it('rejects bytes that do not start with the PK prefix', () => {
+    expect(isPkSignature(new Uint8Array([0x00, 0x4b, 0x03, 0x04]), 0)).toBe(false);
+    expect(isPkSignature(new Uint8Array([0x50, 0x00, 0x03, 0x04]), 0)).toBe(false);
+  });
+
+  it('rejects a PK-prefixed sequence with an unrecognized record kind', () => {
+    expect(isPkSignature(new Uint8Array([0x50, 0x4b, 0x09, 0x09]), 0)).toBe(false);
+  });
+
+  it('reads the signature at a non-zero offset', () => {
+    const bytes = new Uint8Array([0xaa, 0xaa, 0x50, 0x4b, 0x03, 0x04]);
+    expect(isPkSignature(bytes, 2)).toBe(true);
   });
 });
