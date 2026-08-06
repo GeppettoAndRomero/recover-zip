@@ -100,4 +100,9 @@ export const zh: ToolContent = {
       '由 Geppetto 构建与维护。部分代码借助 AI 辅助编写，但所有审查与决定均由维护者完成。',
     securityText: '安全',
   },
+
+  related: {
+    h2: '相关工具',
+    blogLinkText: '阅读技术说明',
+  },
 };
